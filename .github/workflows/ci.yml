@@ -1,0 +1,44 @@
+name: CI
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Step 1: Check out the repository
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      # Step 2: Set up Node.js (needed for running linting tools like JSONLint or other packages)
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '16'  # Specify the Node.js version you need
+
+      # Step 3: Install dependencies for JSON linting
+      - name: Install JSONLint
+        run: npm install -g jsonlint
+
+      # Step 4: Validate JSON files in the i18n folder using JSONLint
+      - name: Validate i18n JSON files
+        run: |
+          # Loop through JSON files in the i18n directory and validate them
+          for file in locales/*.json; do
+            echo "Validating $file"
+            jsonlint -q "$file"  # Quiet mode, it only returns error if there's an issue
+          done
+
+      # Step 5: Handle failure if any JSON file has errors
+      - name: Check for validation success
+        run: |
+          if [ $? -ne 0 ]; then
+            echo "One or more i18n files are invalid. Please check them for syntax errors."
+            exit 1
+          else
+            echo "All i18n files are valid!"
+          fi
